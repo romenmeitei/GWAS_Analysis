@@ -1,0 +1,147 @@
+RAW DATA
+(Assemblies: fasta_all/*.fa)
+                │
+                ▼
+REFERENCE GENOME SELECTION
+(album_ref.fna / quinoa_ref.fna)
+                │
+                ▼
+SEQUENCE ALIGNMENT
+(minimap2 -ax asm5)
+                │
+                ▼
+SAM → BAM PROCESSING
+(samtools view, sort, index)
+                │
+                ▼
+FINAL ALIGNMENTS
+(.sorted.bam + .bai)
+                │
+                ▼
+VARIANT CALLING
+(bcftools mpileup + bcftools call)
+                │
+                ▼
+RAW VARIANTS
+(album_raw.vcf.gz)
+                │
+                ▼
+SNP FILTERING
+(QUAL, DP, MAF, missingness)
+                │
+                ▼
+HIGH-CONFIDENCE SNPs
+(~702,016 SNPs)
+                │
+                ▼
+SAMPLE CURATION
+(remove Album_F)
+                │
+                ▼
+FINAL GWAS-READY VCF
+(album_final_noF.vcf.gz)
+                │
+                ▼
+GOOGLE COLAB GWAS WORKFLOW
+(PLINK + GEMMA + Python)
+                │
+                ▼
+VCF → PLINK CONVERSION
+(plink1.9 --vcf album_final_noF.vcf.gz
+ --double-id --allow-extra-chr --make-bed)
+                │
+                ▼
+PLINK GENOTYPE FILES
+(geno.bed, geno.bim, geno.fam)
+                │
+                ▼
+GENOTYPE QC / LIGHT FILTERING
+(plink1.9 --bfile geno --geno 0.2 --make-bed)
+                │
+                ▼
+FILTERED PLINK FILES
+(geno_filtered.bed, geno_filtered.bim, geno_filtered.fam)
+                │
+                ▼
+PHENOTYPE DATA PREPARATION
+(quantitative.xlsx)
+                │
+                ├── Read Excel in Colab
+                ├── Traits in first column
+                ├── Samples in remaining columns
+                ├── Extract numeric means from values like 0.6 ± 0.05
+                ├── Transpose to sample × trait matrix
+                └── Retain 7 quantitative traits
+                │
+                ▼
+CLEAN PHENOTYPE MATRIX
+(5 samples × 7 traits)
+- Plant Height (m)
+- Stem Breadth (cm)
+- Leaf Length (cm)
+- Leaf breadth (cm)
+- Petiole length (cm)
+- Petiole breadth (mm)
+- Panicle length (cm)
+                │
+                ▼
+SAMPLE ORDER HARMONIZATION
+(match phenotype rows to geno_filtered.fam order)
+                │
+                ▼
+KINSHIP MATRIX ESTIMATION
+(GEMMA: ./gemma -bfile geno_filtered -gk 1 -o kinship)
+                │
+                ▼
+RELATEDNESS MATRIX
+(output/kinship.cXX.txt)
+                │
+                ▼
+TRAIT-WISE GWAS BY REPETITION
+(for each quantitative trait separately)
+                │
+                ├── Insert one trait at a time into .fam PHENO column
+                ├── Run GEMMA LMM:
+                │   ./gemma -bfile geno_filtered
+                │           -k output/kinship.cXX.txt
+                │           -lmm 4
+                │           -o <trait_name>
+                │
+                └── Repeat for all 7 traits
+                │
+                ▼
+PER-TRAIT GWAS OUTPUTS
+(output/<trait>.assoc.txt and .log.txt)
+                │
+                ▼
+RESULT SUMMARIZATION
+(Python / pandas)
+                │
+                ├── top20 SNPs per trait
+                ├── top100 SNPs per trait
+                ├── full per-trait GWAS tables
+                ├── gwas_trait_summary.csv
+                ├── best_hit_per_trait.csv
+                └── trait_significance_summary.csv
+                │
+                ▼
+VISUALIZATION
+(Python / matplotlib)
+                │
+                ├── Manhattan plot for each trait
+                ├── QQ plot for each trait
+                ├── combined supplementary figures
+                └── manuscript-quality PNG/PDF/SVG outputs
+                │
+                ▼
+FINAL EXPORT
+(zip compressed results and figures)
+                │
+                ▼
+PUBLICATION-READY OUTPUT PACKAGE
+- trait-wise GWAS result tables
+- best-hit summary table
+- significance summary table
+- Manhattan plots
+- QQ plots
+- high-quality manuscript figures
